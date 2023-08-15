@@ -32,14 +32,26 @@ def render(source_files, output_dir, context=None):
         same context will be provided to all templates being rendered.
 
     """
+    # Returns an iterable of paths (the provided html's).
     src = get_iterable(source_files)
+    
     # TODO: Hook into qiime.sdk.config.TemporaryDirectory() when it exists
+    
+    # Create temp dir
     temp_dir = tempfile.TemporaryDirectory()
+    
+    # Gets path in system to dir "templates" from package "q2templates"
     template_data = pkg_resources.resource_filename('q2templates', 'templates')
+
+    # Initialized jinja object with the temp dir path
     env = Environment(loader=FileSystemLoader(temp_dir.name), auto_reload=True)
 
+    # Copies "template_data/base.html" to temp dir
     shutil.copy2(os.path.join(template_data, 'base.html'), temp_dir.name)
 
+    # This loop parses each source file in search for referenced templates
+    # When it finds them and they are not already in the temp dir it copies them
+    # from template_data to temp dir
     for source_file in src:
         with open(source_file, 'r') as fh:
             ast = env.parse(fh.read())
@@ -48,9 +60,11 @@ def render(source_files, output_dir, context=None):
                 shutil.copy2(os.path.join(template_data, template),
                              temp_dir.name)
 
+    # If context was omited in the function call it asigns an empty dict
     if context is None:
         context = {}
-    # Grab the plugin and visualizer method name for default titles
+    
+    # Grab the plugin and visualizer method name for default titles (from tab in browser)
     stack = inspect.stack()
     caller_frame = stack[1]
     caller_filename = caller_frame[0]
